@@ -14,8 +14,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
-    public UserDTO createUser(CreateUserRequest createUserRequest) {
-        User user = userRepository.save(userMapper.toEntity(createUserRequest));
+    public UserDTO createUser(CreateUserRequest request) {
+        User user = userRepository.save(userMapper.toEntity(request));
         return userMapper.toDTO(user);
     }
 
