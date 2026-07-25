@@ -8,7 +8,9 @@ import com.anhub.subscriboholic.model.entity.User;
 import com.anhub.subscriboholic.repository.SubscriptionRepository;
 import com.anhub.subscriboholic.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @AllArgsConstructor
@@ -30,5 +32,27 @@ public class SubscriptionService {
 
     public SubscriptionDTO getSubscriptionById(Integer id) {
         return subscriptionMapper.toDTO(subscriptionRepository.findById(id).orElse(null));
+    }
+
+    public SubscriptionDTO updateSubscription(Integer id, CreateSubscriptionRequest request) {
+
+        Subscription subscription = subscriptionRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Subscription with ID " + id + " not found"));
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User with ID " + request.getUserId() + " not found"));
+
+        subscriptionMapper.updateEntityFromDto(request, subscription);
+        Subscription updatedSubscription = subscriptionRepository.save(subscription);
+        return subscriptionMapper.toDTO(updatedSubscription);
+    }
+
+    public boolean deleteSubscriptionById(Integer id) {
+        Subscription subscription = subscriptionRepository.findById(id).orElse(null);
+        if (subscription != null) {
+            subscriptionRepository.delete(subscription);
+            return true;
+        }
+        return false;
     }
 }

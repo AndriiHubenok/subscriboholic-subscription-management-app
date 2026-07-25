@@ -19,11 +19,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
-    private int id;
+    private Integer id;
 
     private String username;
 
     private String email;
+
+    @JsonProperty("updated_at")
+    private LocalDateTime updatedAt;
 
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
