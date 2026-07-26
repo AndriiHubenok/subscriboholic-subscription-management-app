@@ -25,6 +25,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,6 +35,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "subscriptions")
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 public class Subscription {
@@ -68,8 +72,10 @@ public class Subscription {
     private SubscriptionStatus status;
 
     @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
     @Column(name = "created_at", insertable = false, updatable = false)
+    @CreatedDate
     private LocalDateTime createdAt;
 }
