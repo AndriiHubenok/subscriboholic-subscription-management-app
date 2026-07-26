@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,10 +35,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubscriptionDTO {
-    private int id;
+    private Integer id;
 
     @JsonProperty("user_id")
-    private int userId;
+    private Integer userId;
 
     private String name;
 
@@ -54,6 +56,11 @@ public class SubscriptionDTO {
 
     private SubscriptionStatus status;
 
+    @UpdateTimestamp
+    @JsonProperty("updated_at")
+    private LocalDateTime updatedAt;
+
+    @CreationTimestamp
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 }

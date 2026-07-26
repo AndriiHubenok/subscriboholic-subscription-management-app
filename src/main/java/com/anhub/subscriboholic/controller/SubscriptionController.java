@@ -18,8 +18,8 @@ class SubscriptionController {
     private SubscriptionService subscriptionService;
 
     @PostMapping
-    public ResponseEntity<SubscriptionDTO> createSubscription(@RequestBody @Valid CreateSubscriptionRequest createSubscriptionRequest) {
-        SubscriptionDTO createdSubscription = subscriptionService.createSubscription(createSubscriptionRequest);
+    public ResponseEntity<SubscriptionDTO> createSubscription(@RequestBody @Valid CreateSubscriptionRequest request) {
+        SubscriptionDTO createdSubscription = subscriptionService.createSubscription(request);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -34,5 +34,19 @@ class SubscriptionController {
     public ResponseEntity<SubscriptionDTO> getSubscriptionById(@PathVariable Integer id) {
         SubscriptionDTO subscriptionDTO = subscriptionService.getSubscriptionById(id);
         return ResponseEntity.ok(subscriptionDTO);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<SubscriptionDTO> updateSubscription(@PathVariable Integer id, @RequestBody @Valid CreateSubscriptionRequest request) {
+        SubscriptionDTO updatedSubscription = subscriptionService.updateSubscription(id, request);
+        return ResponseEntity.ok(updatedSubscription);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSubscriptionById(@PathVariable Integer id) {
+        if (subscriptionService.deleteSubscriptionById(id)) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 }
