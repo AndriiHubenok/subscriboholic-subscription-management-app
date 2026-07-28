@@ -5,6 +5,7 @@ import com.anhub.subscriboholic.model.dto.CreateUserRequest;
 import com.anhub.subscriboholic.model.dto.UserDTO;
 import com.anhub.subscriboholic.model.entity.Subscription;
 import com.anhub.subscriboholic.model.entity.User;
+import com.anhub.subscriboholic.model.enumerated.UserRole;
 import com.anhub.subscriboholic.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,9 +19,12 @@ public class UserService {
     private final PasswordEncoder encoder;
 
     public UserDTO createUser(CreateUserRequest request) {
-        request.setPassword(encoder.encode(request.getPassword()));
-        User user = userRepository.save(userMapper.toEntity(request));
-        return userMapper.toDTO(user);
+        User user = userMapper.toEntity(request);
+
+        user.setPassword(encoder.encode(request.getPassword()));
+        user.setRole(UserRole.USER);
+
+        return userMapper.toDTO(userRepository.save(user));
     }
 
     public UserDTO getUserById(Integer id) {

@@ -1,12 +1,9 @@
 package com.anhub.subscriboholic.controller;
 
+import com.anhub.subscriboholic.model.dto.CreateUserRequest;
 import com.anhub.subscriboholic.model.dto.LoginRequest;
-import com.anhub.subscriboholic.model.entity.User;
-import com.anhub.subscriboholic.repository.UserRepository;
-import com.anhub.subscriboholic.security.JwtService;
+import com.anhub.subscriboholic.service.AuthService;
 import lombok.AllArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,18 +14,15 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class AuthController {
 
-    private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
-    private final UserRepository userRepository;
+    private final AuthService authService;
+
+    @PostMapping("/signup")
+    public String signup(@RequestBody CreateUserRequest createUserRequest) {
+        return authService.signup(createUserRequest);
+    }
 
     @PostMapping("/login")
     public String login(@RequestBody LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
-
-        User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
-
-        return jwtService.generateToken(user);
+        return authService.login(request);
     }
 }
