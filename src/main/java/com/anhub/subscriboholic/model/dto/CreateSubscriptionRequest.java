@@ -14,8 +14,6 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateSubscriptionRequest {
-    @NotNull(message = "User ID is required")
-    private Integer userId;
 
     @NotBlank(message = "Subscription name is required")
     @Size(max = 200, message = "Name must not exceed 200 characters")

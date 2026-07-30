@@ -8,10 +8,13 @@ import com.anhub.subscriboholic.model.enumerated.UserRole;
 import com.anhub.subscriboholic.repository.UserRepository;
 import com.anhub.subscriboholic.security.JwtService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @AllArgsConstructor
@@ -41,5 +44,16 @@ public class AuthService {
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
 
         return jwtService.generateToken(user);
+    }
+
+    public String getCurrentUserUsername() {
+        String username;
+        try {
+            username = SecurityContextHolder.getContext().getAuthentication().getName();
+        } catch (NullPointerException e) {
+            System.out.println("User is not authenticated. Cannot create subscription.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User is not authenticated.");
+        }
+        return username;
     }
 }
