@@ -120,6 +120,6 @@ class UserServiceTest {
 
         userService.deleteUserById(createdUser.getId());
 
-        assertNull(userService.getUserById(createdUser.getId()));
+        assertThrows(IllegalArgumentException.class, () -> userService.getUserById(createdUser.getId()));
     }
 }

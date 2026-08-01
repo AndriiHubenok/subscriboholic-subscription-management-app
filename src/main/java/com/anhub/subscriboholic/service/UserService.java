@@ -10,8 +10,10 @@ import com.anhub.subscriboholic.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional
 @AllArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
@@ -28,15 +30,15 @@ public class UserService {
     }
 
     public UserDTO getUserById(Integer id) {
-        return userMapper.toDTO(userRepository.findById(id).orElse(null));
+        return userMapper.toDTO(userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found")));
     }
 
     public boolean deleteUserById(Integer id) {
-        User user = userRepository.findById(id).orElse(null);
-        if (user != null) {
-            userRepository.delete(user);
-            return true;
-        }
-        return false;
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        userRepository.delete(user);
+        return true;
     }
 }
