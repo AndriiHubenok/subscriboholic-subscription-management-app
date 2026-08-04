@@ -6,12 +6,13 @@ import com.anhub.subscriboholic.model.enumerated.UserRole;
 import com.anhub.subscriboholic.security.JwtService;
 import com.anhub.subscriboholic.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -29,16 +30,15 @@ class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     @MockitoBean
     private UserService userService;
 
     @MockitoBean
     private JwtService jwtService;
-
-    @MockitoBean
-    private UserDetailsService userDetailsService;
 
     @Test
     @WithMockUser(username = "B.J.", roles = {"ADMIN"})
