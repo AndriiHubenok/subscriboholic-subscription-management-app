@@ -1,47 +1,25 @@
 package com.anhub.subscriboholic.service;
 
-import com.anhub.subscriboholic.exception.SubscriptionNotFoundException;
 import com.anhub.subscriboholic.mapper.SubscriptionMapper;
 import com.anhub.subscriboholic.model.dto.CreateSubscriptionRequest;
 import com.anhub.subscriboholic.model.dto.SubscriptionDTO;
-import com.anhub.subscriboholic.model.dto.UserDTO;
 import com.anhub.subscriboholic.model.entity.Subscription;
 import com.anhub.subscriboholic.model.entity.User;
 import com.anhub.subscriboholic.model.enumerated.BillingCycleType;
 import com.anhub.subscriboholic.model.enumerated.SubscriptionStatus;
-import com.anhub.subscriboholic.model.enumerated.UserRole;
 import com.anhub.subscriboholic.repository.SubscriptionRepository;
 import com.anhub.subscriboholic.repository.UserRepository;
-import com.anhub.subscriboholic.security.JwtService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.TimeZone;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -216,7 +194,6 @@ class SubscriptionServiceTest {
     }
 
     @Test
-    @WithMockUser(username = "Adam Jensen")
     void shouldDeleteSubscription() {
 
         Integer subscriptionId = 1;
