@@ -1,15 +1,11 @@
 package com.anhub.subscriboholic.controller;
 
 import com.anhub.subscriboholic.model.dto.CreateSubscriptionRequest;
-import com.anhub.subscriboholic.model.dto.CreateUserRequest;
 import com.anhub.subscriboholic.model.dto.SubscriptionDTO;
-import com.anhub.subscriboholic.model.dto.UserDTO;
 import com.anhub.subscriboholic.model.enumerated.BillingCycleType;
 import com.anhub.subscriboholic.model.enumerated.SubscriptionStatus;
-import com.anhub.subscriboholic.model.enumerated.UserRole;
 import com.anhub.subscriboholic.security.JwtService;
 import com.anhub.subscriboholic.service.SubscriptionService;
-import com.anhub.subscriboholic.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -34,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest(SubscriptionController.class)
-public class SubsciptionControllerTest {
+class SubscriptionControllerTest {
     @Autowired
     private MockMvc mockMvc;
 

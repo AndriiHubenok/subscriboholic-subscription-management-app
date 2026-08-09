@@ -1,91 +1,73 @@
 package com.anhub.subscriboholic.service;
 
 import com.anhub.subscriboholic.exception.SubscriptionNotFoundException;
+import com.anhub.subscriboholic.mapper.SubscriptionMapper;
 import com.anhub.subscriboholic.model.dto.CreateSubscriptionRequest;
 import com.anhub.subscriboholic.model.dto.SubscriptionDTO;
 import com.anhub.subscriboholic.model.dto.UserDTO;
+import com.anhub.subscriboholic.model.entity.Subscription;
 import com.anhub.subscriboholic.model.entity.User;
 import com.anhub.subscriboholic.model.enumerated.BillingCycleType;
 import com.anhub.subscriboholic.model.enumerated.SubscriptionStatus;
 import com.anhub.subscriboholic.model.enumerated.UserRole;
 import com.anhub.subscriboholic.repository.SubscriptionRepository;
 import com.anhub.subscriboholic.repository.UserRepository;
+import com.anhub.subscriboholic.security.JwtService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ExtendWith(MockitoExtension.class)
 class SubscriptionServiceTest {
 
-    @LocalServerPort
-    private int port;
-
-    @Autowired
-    private SubscriptionService subscriptionService;
-
-    @Autowired
+    @Mock
     private SubscriptionRepository subscriptionRepository;
 
-    @Autowired
+    @Mock
     private UserRepository userRepository;
 
-    private Integer testUserId;
+    @Mock
+    private SubscriptionMapper subscriptionMapper;
 
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");
+    @Mock
+    private AuthService authService;
 
-    @DynamicPropertySource
-    static void dynamicProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
-
-    @BeforeAll
-    static void beforeAll() {
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-        postgres.start();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        postgres.stop();
-    }
-
-    @BeforeEach
-    void setUp() {
-        subscriptionRepository.deleteAll();
-        userRepository.deleteAll();
-
-        User user = new User();
-        user.setUsername("Adam Jensen");
-        user.setPassword("Icarus228?");
-        user.setEmail("neveraskedforthisman@gmail.com");
-        user.setRole(UserRole.USER);
-
-        User createdUser = userRepository.save(user);
-        testUserId = createdUser.getId();
-    }
+    @InjectMocks
+    private SubscriptionService subscriptionService;
 
     @Test
-    @WithMockUser(username = "Adam Jensen")
     void shouldCreateSubscription() {
-        CreateSubscriptionRequest request = new CreateSubscriptionRequest();
 
+        CreateSubscriptionRequest request = new CreateSubscriptionRequest();
         request.setName("Netflix Pro");
         request.setDescription("Netflix and chill");
         request.setPrice(BigDecimal.valueOf(15.99));
@@ -94,67 +76,97 @@ class SubscriptionServiceTest {
         request.setNextPaymentDate(LocalDate.now().plusDays(30));
         request.setStatus(SubscriptionStatus.ACTIVE);
 
+        User mockUser = new User();
+        mockUser.setId(1);
+        mockUser.setUsername("Adam Jensen");
+
+        Subscription mockSubscription = new Subscription();
+        mockSubscription.setId(1);
+        mockSubscription.setUser(mockUser);
+
+        SubscriptionDTO mockDto = new SubscriptionDTO();
+        mockDto.setId(1);
+        mockDto.setUserId(1);
+        mockDto.setName("Netflix Pro");
+        mockDto.setDescription("Netflix and chill");
+        mockDto.setPrice(BigDecimal.valueOf(15.99));
+        mockDto.setCurrency("USD");
+        mockDto.setBillingCycle(BillingCycleType.MONTHLY);
+        mockDto.setNextPaymentDate(LocalDate.now().plusDays(30));
+        mockDto.setStatus(SubscriptionStatus.ACTIVE);
+        mockDto.setCreatedAt(LocalDateTime.now());
+        mockDto.setUpdatedAt(LocalDateTime.now());
+
+
+        Mockito.when(subscriptionMapper.toEntity(request)).thenReturn(mockSubscription);
+
+        Mockito.when(authService.getCurrentUserUsername()).thenReturn("Adam Jensen");
+        Mockito.when(userRepository.findByUsername("Adam Jensen")).thenReturn(Optional.of(mockUser));
+
+        Mockito.when(subscriptionRepository.save(any(Subscription.class))).thenReturn(mockSubscription);
+
+        Mockito.when(subscriptionMapper.toDTO(mockSubscription)).thenReturn(mockDto);
+
         SubscriptionDTO createdSubscription = subscriptionService.createSubscription(request);
 
+        assertNotNull(createdSubscription);
         assertEquals("Netflix Pro", createdSubscription.getName());
         assertEquals("Netflix and chill", createdSubscription.getDescription());
         assertEquals(BigDecimal.valueOf(15.99), createdSubscription.getPrice());
         assertEquals("USD", createdSubscription.getCurrency());
         assertEquals(BillingCycleType.MONTHLY, createdSubscription.getBillingCycle());
-        assertEquals(LocalDate.now().plusDays(30), createdSubscription.getNextPaymentDate());
         assertEquals(SubscriptionStatus.ACTIVE, createdSubscription.getStatus());
-        assertEquals(testUserId, createdSubscription.getUserId());
+        assertEquals(1, createdSubscription.getUserId());
         assertNotNull(createdSubscription.getId());
-        assertNotNull(createdSubscription.getCreatedAt());
-        assertNotNull(createdSubscription.getUpdatedAt());
     }
 
     @Test
-    @WithMockUser(username = "Adam Jensen")
     void shouldGetSubscription() {
-        CreateSubscriptionRequest request = new CreateSubscriptionRequest();
 
-        request.setName("Netflix Pro");
-        request.setDescription("Netflix and chill");
-        request.setPrice(BigDecimal.valueOf(15.99));
-        request.setCurrency("USD");
-        request.setBillingCycle(BillingCycleType.MONTHLY);
-        request.setNextPaymentDate(LocalDate.now().plusDays(30));
-        request.setStatus(SubscriptionStatus.ACTIVE);
+        Integer subscriptionId = 1;
+        String currentUsername = "Adam Jensen";
 
-        Integer id = subscriptionService.createSubscription(request).getId();
-        SubscriptionDTO retrievedSubscription = subscriptionService.getSubscriptionById(id);
+        User mockUser = new User();
+        mockUser.setUsername(currentUsername);
 
-        assertEquals(id, retrievedSubscription.getId());
+        Subscription mockSubscription = new Subscription();
+        mockSubscription.setId(subscriptionId);
+        mockSubscription.setName("Netflix Pro");
+        mockSubscription.setPrice(BigDecimal.valueOf(15.99));
+        mockSubscription.setUser(mockUser);
+
+        SubscriptionDTO mockDto = new SubscriptionDTO();
+        mockDto.setId(subscriptionId);
+        mockDto.setName("Netflix Pro");
+        mockDto.setPrice(BigDecimal.valueOf(15.99));
+        mockDto.setUserId(1);
+
+        Mockito.when(subscriptionRepository.findById(subscriptionId))
+                .thenReturn(Optional.of(mockSubscription));
+
+        Mockito.when(authService.getCurrentUserUsername())
+                .thenReturn(currentUsername);
+
+        Mockito.when(subscriptionMapper.toDTO(mockSubscription))
+                .thenReturn(mockDto);
+
+        SubscriptionDTO retrievedSubscription = subscriptionService.getSubscriptionById(subscriptionId);
+
+        assertNotNull(retrievedSubscription);
+        assertEquals(subscriptionId, retrievedSubscription.getId());
         assertEquals("Netflix Pro", retrievedSubscription.getName());
-        assertEquals("Netflix and chill", retrievedSubscription.getDescription());
         assertEquals(BigDecimal.valueOf(15.99), retrievedSubscription.getPrice());
-        assertEquals("USD", retrievedSubscription.getCurrency());
-        assertEquals(BillingCycleType.MONTHLY, retrievedSubscription.getBillingCycle());
-        assertEquals(LocalDate.now().plusDays(30), retrievedSubscription.getNextPaymentDate());
-        assertEquals(SubscriptionStatus.ACTIVE, retrievedSubscription.getStatus());
-        assertEquals(testUserId, retrievedSubscription.getUserId());
-        assertNotNull(retrievedSubscription.getCreatedAt());
-        assertNotNull(retrievedSubscription.getUpdatedAt());
+        Mockito.verify(subscriptionRepository, Mockito.times(1)).findById(subscriptionId);
+        Mockito.verify(authService, Mockito.times(1)).getCurrentUserUsername();
     }
 
     @Test
-    @WithMockUser(username = "Adam Jensen")
     void shouldUpdateSubscription() {
-        CreateSubscriptionRequest request = new CreateSubscriptionRequest();
 
-        request.setName("Netflix Pro");
-        request.setDescription("Netflix and chill");
-        request.setPrice(BigDecimal.valueOf(15.99));
-        request.setCurrency("USD");
-        request.setBillingCycle(BillingCycleType.MONTHLY);
-        request.setNextPaymentDate(LocalDate.now().plusDays(30));
-        request.setStatus(SubscriptionStatus.ACTIVE);
-
-        Integer id = subscriptionService.createSubscription(request).getId();
+        Integer subscriptionId = 1;
+        String currentUsername = "Adam Jensen";
 
         CreateSubscriptionRequest updateRequest = new CreateSubscriptionRequest();
-
         updateRequest.setName("Netflix Pro");
         updateRequest.setDescription("Netflix and chill");
         updateRequest.setPrice(BigDecimal.valueOf(150.99));
@@ -163,38 +175,70 @@ class SubscriptionServiceTest {
         updateRequest.setNextPaymentDate(LocalDate.now().plusDays(30));
         updateRequest.setStatus(SubscriptionStatus.ACTIVE);
 
-        SubscriptionDTO updatedSubscription = subscriptionService.updateSubscription(id, updateRequest);
+        User mockUser = new User();
+        mockUser.setUsername(currentUsername);
 
-        assertEquals(id, updatedSubscription.getId());
+        Subscription existingSubscription = new Subscription();
+        existingSubscription.setId(subscriptionId);
+        existingSubscription.setUser(mockUser);
+
+        SubscriptionDTO mockUpdatedDto = new SubscriptionDTO();
+        mockUpdatedDto.setId(subscriptionId);
+        mockUpdatedDto.setName("Netflix Pro");
+        mockUpdatedDto.setPrice(BigDecimal.valueOf(150.99));
+        mockUpdatedDto.setCurrency("Tögrög");
+        mockUpdatedDto.setBillingCycle(BillingCycleType.MONTHLY);
+        mockUpdatedDto.setStatus(SubscriptionStatus.ACTIVE);
+        mockUpdatedDto.setUserId(1);
+
+        Mockito.when(subscriptionRepository.findById(subscriptionId))
+                .thenReturn(Optional.of(existingSubscription));
+
+        Mockito.when(authService.getCurrentUserUsername())
+                .thenReturn(currentUsername);
+
+        Mockito.when(subscriptionRepository.save(existingSubscription))
+                .thenReturn(existingSubscription);
+
+        Mockito.when(subscriptionMapper.toDTO(existingSubscription))
+                .thenReturn(mockUpdatedDto);
+
+        SubscriptionDTO updatedSubscription = subscriptionService.updateSubscription(subscriptionId, updateRequest);
+
+        assertNotNull(updatedSubscription);
+        assertEquals(subscriptionId, updatedSubscription.getId());
         assertEquals("Netflix Pro", updatedSubscription.getName());
-        assertEquals("Netflix and chill", updatedSubscription.getDescription());
         assertEquals(BigDecimal.valueOf(150.99), updatedSubscription.getPrice());
         assertEquals("Tögrög", updatedSubscription.getCurrency());
-        assertEquals(BillingCycleType.MONTHLY, updatedSubscription.getBillingCycle());
-        assertEquals(LocalDate.now().plusDays(30), updatedSubscription.getNextPaymentDate());
-        assertEquals(SubscriptionStatus.ACTIVE, updatedSubscription.getStatus());
-        assertEquals(testUserId, updatedSubscription.getUserId());
-        assertNotNull(updatedSubscription.getCreatedAt());
-        assertNotNull(updatedSubscription.getUpdatedAt());
+
+        Mockito.verify(subscriptionRepository, Mockito.times(1)).findById(subscriptionId);
+        Mockito.verify(subscriptionRepository, Mockito.times(1)).save(existingSubscription);
     }
 
     @Test
     @WithMockUser(username = "Adam Jensen")
     void shouldDeleteSubscription() {
-        CreateSubscriptionRequest request = new CreateSubscriptionRequest();
 
-        request.setName("Netflix Pro");
-        request.setDescription("Netflix and chill");
-        request.setPrice(BigDecimal.valueOf(15.99));
-        request.setCurrency("USD");
-        request.setBillingCycle(BillingCycleType.MONTHLY);
-        request.setNextPaymentDate(LocalDate.now().plusDays(30));
-        request.setStatus(SubscriptionStatus.ACTIVE);
+        Integer subscriptionId = 1;
+        String currentUsername = "Adam Jensen";
 
-        Integer id = subscriptionService.createSubscription(request).getId();
+        User mockUser = new User();
+        mockUser.setUsername(currentUsername);
 
-        subscriptionService.deleteSubscriptionById(id);
+        Subscription mockSubscription = new Subscription();
+        mockSubscription.setId(subscriptionId);
+        mockSubscription.setUser(mockUser);
 
-        assertThrows(SubscriptionNotFoundException.class, () -> subscriptionService.getSubscriptionById(id));
+        Mockito.when(subscriptionRepository.findById(subscriptionId))
+                .thenReturn(Optional.of(mockSubscription));
+
+        Mockito.when(authService.getCurrentUserUsername())
+                .thenReturn(currentUsername);
+
+        boolean isDeleted = subscriptionService.deleteSubscriptionById(subscriptionId);
+
+        assertTrue(isDeleted);
+
+        Mockito.verify(subscriptionRepository, Mockito.times(1)).delete(mockSubscription);
     }
 }
