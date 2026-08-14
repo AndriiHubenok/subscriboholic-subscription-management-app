@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -189,5 +190,29 @@ class SubscriptionControllerTest {
         mockMvc.perform(delete("/subscriptions/{id}", 1)
                         .with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void shouldReturn401WhenGettingSubscriptionWithoutAuth() throws Exception {
+        mockMvc.perform(get("/subscriptions/1"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithAnonymousUser
+    void shouldReturn401WhenDeletingSubscriptionWithoutAuth() throws Exception {
+        mockMvc.perform(delete("/subscriptions/1").with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(username = "Artem", roles = {"USER"})
+    void shouldReturn200WhenGettingSubscriptionWithValidAuth() throws Exception {
+        Mockito.when(subscriptionService.getSubscriptionById(1))
+                .thenReturn(new SubscriptionDTO());
+
+        mockMvc.perform(get("/subscriptions/1"))
+                .andExpect(status().isOk());
     }
 }
