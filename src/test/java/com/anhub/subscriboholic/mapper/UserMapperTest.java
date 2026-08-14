@@ -16,7 +16,7 @@ class UserMapperTest {
     @BeforeEach
     void setUp() {
 
-        userMapper = org.mapstruct.factory.Mappers.getMapper(UserMapper.class);
+        userMapper = new UserMapperImpl();
     }
 
     @Test
