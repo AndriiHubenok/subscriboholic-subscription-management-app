@@ -3,13 +3,20 @@ package com.anhub.subscriboholic.controller;
 import com.anhub.subscriboholic.model.dto.CreateSubscriptionRequest;
 import com.anhub.subscriboholic.model.dto.SubscriptionDTO;
 import com.anhub.subscriboholic.service.SubscriptionService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.io.File;
 import java.net.URI;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Scanner;
 
 @RestController
 @RequestMapping("/subscriptions")
