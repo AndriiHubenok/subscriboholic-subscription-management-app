@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers( "/users/**").hasRole("ADMIN")
+                        .requestMatchers("/enable_banking_callback").permitAll()
                         .anyRequest().authenticated()
                 )
 
