@@ -1,6 +1,6 @@
 package com.anhub.subscriboholic.validation;
 
-import com.anhub.subscriboholic.model.dto.CreateUserRequest;
+import com.anhub.subscriboholic.user.dto.CreateUserRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;

@@ -1,5 +1,7 @@
 package com.anhub.subscriboholic.exception;
 
+import com.anhub.subscriboholic.subscription.exception.SubscriptionNotFoundException;
+import com.anhub.subscriboholic.user.exception.UnauthorizedSubscriptionAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

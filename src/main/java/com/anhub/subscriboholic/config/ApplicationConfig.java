@@ -1,6 +1,6 @@
 package com.anhub.subscriboholic.config;
 
-import com.anhub.subscriboholic.repository.UserRepository;
+import com.anhub.subscriboholic.user.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -1,0 +1,20 @@
+package com.anhub.subscriboholic.user;
+
+import com.anhub.subscriboholic.user.dto.CreateUserRequest;
+import com.anhub.subscriboholic.user.dto.UserDTO;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
+
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+public interface UserMapper {
+
+    UserDTO toDTO(User user);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "subscriptions", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    User toEntity(CreateUserRequest request);
+}
