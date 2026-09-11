@@ -4,7 +4,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +29,7 @@ class BankingController {
         RestTemplate restTemplate = new RestTemplate();
 
         return restTemplate.exchange(
-                "https://api.enablebanking.com/aspsps",
+                "https://api.enablebanking.com/aspsps?country=LT",
                 HttpMethod.GET,
                 entity,
                 String.class
@@ -98,20 +100,28 @@ class BankingController {
     }
 
     @GetMapping("/api/bank-transactions/{accountId}")
-    public ResponseEntity<String> fetchTransactions(@PathVariable String accountId) {
+    public ResponseEntity<String> fetchTransactions(@PathVariable String accountId,
+                                                    @RequestParam(name = "continuation_key", required = false) String continuationKey) {
         String authHeader = bankingService.getAuthorizationHeader();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(authHeader);
+        headers.setBearerAuth(authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         RestTemplate restTemplate = new RestTemplate();
 
-        String url = "https://api.enablebanking.com/accounts/" + accountId + "/transactions";
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder
+                .fromUriString("https://api.enablebanking.com/accounts/" + accountId + "/transactions");
+
+        if (continuationKey != null && !continuationKey.isBlank()) {
+            uriBuilder.queryParam("continuation_key", continuationKey);
+        }
+
+        URI targetUri = uriBuilder.build().encode().toUri();
 
         return restTemplate.exchange(
-                url,
+                targetUri,
                 HttpMethod.GET,
                 entity,
                 String.class
