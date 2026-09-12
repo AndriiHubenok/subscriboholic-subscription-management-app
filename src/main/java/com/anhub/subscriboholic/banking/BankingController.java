@@ -1,12 +1,19 @@
 package com.anhub.subscriboholic.banking;
 
+import com.anhub.subscriboholic.banking.dto.TransactionDTO;
+import com.anhub.subscriboholic.banking.dto.TransactionsPageResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +59,7 @@ class BankingController {
         Map<String, Object> requestBody = new java.util.HashMap<>();
 
         requestBody.put("access", java.util.Map.of("valid_until", validUntil));
-        requestBody.put("aspsp", java.util.Map.of("name", "Nordea", "country", "FI"));
+        requestBody.put("aspsp", java.util.Map.of("name", "Mock ASPSP", "country", "DE"));
         requestBody.put("state", java.util.UUID.randomUUID().toString());
         requestBody.put("redirect_url", "http://localhost:60606/enable_banking_callback");
 
@@ -105,7 +112,7 @@ class BankingController {
         String authHeader = bankingService.getAuthorizationHeader();
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(authHeader.startsWith("Bearer ") ? authHeader.substring(7) : authHeader);
+        headers.setBearerAuth(authHeader);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
@@ -126,5 +133,34 @@ class BankingController {
                 entity,
                 String.class
         );
+    }
+
+    @GetMapping("/api/possible-subscriptions/{accountId}")
+    public ResponseEntity<List<List<TransactionDTO>>> fetchPossibleTransactions(@PathVariable String accountId) {
+        String authHeader = bankingService.getAuthorizationHeader();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(authHeader);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        RestTemplate restTemplate = new RestTemplate();
+
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder
+                .fromUriString("https://api.enablebanking.com/accounts/" + accountId + "/transactions");
+
+        URI targetUri = uriBuilder.build().encode().toUri();
+
+        ResponseEntity<TransactionsPageResponse> response = restTemplate.exchange(
+                targetUri,
+                HttpMethod.GET,
+                entity,
+                TransactionsPageResponse.class
+        );
+
+
+        List<TransactionDTO> transactions = response.getBody() != null ? response.getBody().transactions() : new ArrayList<>();
+
+        return ResponseEntity.ok(bankingService.findMonthlySubscriptions(transactions));
     }
 }
