@@ -11,6 +11,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional
 @AllArgsConstructor
@@ -29,6 +31,22 @@ class SubscriptionService {
         subscription.setUser(user);
         Subscription savedSubscription = subscriptionRepository.save(subscription);
         return subscriptionMapper.toDTO(savedSubscription);
+    }
+
+    public List<SubscriptionDTO> createListSubscriptions(List<CreateSubscriptionRequest> request) {
+        User user = userRepository.findByUsername(authService.getCurrentUserUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        List<Subscription> subscriptions = request.stream()
+                .map(subscriptionMapper::toEntity)
+                .toList();
+
+        subscriptions.forEach(subscription -> subscription.setUser(user));
+
+        List<Subscription> savedSubscriptions = subscriptionRepository.saveAll(subscriptions);
+        return savedSubscriptions.stream()
+                .map(subscriptionMapper::toDTO)
+                .toList();
     }
 
     public SubscriptionDTO getSubscriptionById(Integer id) {

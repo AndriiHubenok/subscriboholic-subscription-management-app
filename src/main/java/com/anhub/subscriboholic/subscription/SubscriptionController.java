@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/subscriptions")
@@ -27,6 +28,12 @@ class SubscriptionController {
                 .toUri();
 
         return ResponseEntity.created(location).body(createdSubscription);
+    }
+
+    @PostMapping("/list")
+    public ResponseEntity<List<SubscriptionDTO>> createListSubscriptions(@RequestBody @Valid List<CreateSubscriptionRequest> request) {
+        List<SubscriptionDTO> createdSubscriptions = subscriptionService.createListSubscriptions(request);
+        return ResponseEntity.status(201).body(createdSubscriptions);
     }
 
     @GetMapping("/{id}")

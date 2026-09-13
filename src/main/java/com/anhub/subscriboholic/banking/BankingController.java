@@ -136,7 +136,7 @@ class BankingController {
     }
 
     @GetMapping("/api/possible-subscriptions/{accountId}")
-    public ResponseEntity<List<List<TransactionDTO>>> fetchPossibleTransactions(@PathVariable String accountId) {
+    public ResponseEntity<List<TransactionDTO>> fetchPossibleTransactions(@PathVariable String accountId) {
         String authHeader = bankingService.getAuthorizationHeader();
 
         HttpHeaders headers = new HttpHeaders();
@@ -161,6 +161,9 @@ class BankingController {
 
         List<TransactionDTO> transactions = response.getBody() != null ? response.getBody().transactions() : new ArrayList<>();
 
-        return ResponseEntity.ok(bankingService.findMonthlySubscriptions(transactions));
+        List<TransactionDTO> possibleSubscriptions = bankingService.findMonthlySubscriptions(transactions)
+                .stream().map(List::getLast).toList();
+
+        return ResponseEntity.ok(possibleSubscriptions);
     }
 }
