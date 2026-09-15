@@ -1,9 +1,11 @@
 package com.anhub.subscriboholic.banking;
 
+import com.anhub.subscriboholic.banking.dto.AspspDTO;
 import com.anhub.subscriboholic.banking.dto.TransactionDTO;
 import com.anhub.subscriboholic.banking.dto.TransactionsPageResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.AllArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -12,18 +14,18 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @RestController
 @AllArgsConstructor
+@RequestMapping("/api/banking")
 class BankingController {
 
     private final BankingService bankingService;
+    private final Cache<String, String> cache;
 
-    @GetMapping("/api/bank-data")
+    @GetMapping("/bank-data")
     public ResponseEntity<String> fetchBankData() {
         String authHeader = bankingService.getAuthorizationHeader();
 
@@ -43,8 +45,8 @@ class BankingController {
         );
     }
 
-    @PostMapping("/api/bank-auth")
-    public ResponseEntity<String> authBanking() {
+    @PostMapping("/bank-auth")
+    public ResponseEntity<String> authBanking(@RequestBody AspspDTO aspspDTO) {
         String authHeader = bankingService.getAuthorizationHeader();
 
         HttpHeaders headers = new HttpHeaders();
@@ -53,15 +55,15 @@ class BankingController {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         String validUntil = java.time.Instant.now()
-                .plus(90, java.time.temporal.ChronoUnit.DAYS)
+                .plus(90, ChronoUnit.DAYS)
                 .toString();
 
-        Map<String, Object> requestBody = new java.util.HashMap<>();
+        Map<String, Object> requestBody = new HashMap<>();
 
-        requestBody.put("access", java.util.Map.of("valid_until", validUntil));
-        requestBody.put("aspsp", java.util.Map.of("name", "Mock ASPSP", "country", "DE"));
-        requestBody.put("state", java.util.UUID.randomUUID().toString());
-        requestBody.put("redirect_url", "http://localhost:60606/enable_banking_callback");
+        requestBody.put("access", Map.of("valid_until", validUntil));
+        requestBody.put("aspsp", aspspDTO);
+        requestBody.put("state", UUID.randomUUID().toString());
+        requestBody.put("redirect_url", "http://localhost:60606/api/banking/enable_banking_callback");
 
         // Optional params
 //        requestBody.put("psu_type", "personal");
@@ -86,6 +88,7 @@ class BankingController {
             @RequestParam("code") String code,
             @RequestParam("state") String state) {
         System.out.println("Handle Banking Callback is called");
+        System.out.println("Code: " + code);
 
         String authHeader = bankingService.getAuthorizationHeader();
 
@@ -106,7 +109,7 @@ class BankingController {
         );
     }
 
-    @GetMapping("/api/bank-transactions/{accountId}")
+    @GetMapping("/bank-transactions/{accountId}")
     public ResponseEntity<String> fetchTransactions(@PathVariable String accountId,
                                                     @RequestParam(name = "continuation_key", required = false) String continuationKey) {
         String authHeader = bankingService.getAuthorizationHeader();
@@ -135,7 +138,7 @@ class BankingController {
         );
     }
 
-    @GetMapping("/api/possible-subscriptions/{accountId}")
+    @GetMapping("/possible-subscriptions/{accountId}")
     public ResponseEntity<List<TransactionDTO>> fetchPossibleTransactions(@PathVariable String accountId) {
         String authHeader = bankingService.getAuthorizationHeader();
 

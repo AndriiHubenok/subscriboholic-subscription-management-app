@@ -1,6 +1,8 @@
 package com.anhub.subscriboholic.config;
 
 import com.anhub.subscriboholic.user.UserRepository;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +14,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @AllArgsConstructor
@@ -39,5 +43,13 @@ public class ApplicationConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public Cache<String, String> cacheUserBankingSession() {
+        return Caffeine.newBuilder()
+                .maximumSize(1000)
+                .expireAfterWrite(30, TimeUnit.MINUTES)
+                .build();
     }
 }
