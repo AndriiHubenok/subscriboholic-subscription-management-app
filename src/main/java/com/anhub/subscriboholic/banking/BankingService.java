@@ -5,11 +5,13 @@ import com.anhub.subscriboholic.banking.dto.TransactionsPageResponse;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
@@ -83,6 +85,48 @@ class BankingService {
 
         return KeyFactory.getInstance("RSA")
                 .generatePrivate(keySpec);
+    }
+
+    public List<TransactionDTO> requestTransactions(String accountId) {
+        String authHeader = getAuthorizationHeader();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(authHeader);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        RestTemplate restTemplate = new RestTemplate();
+
+        UriComponentsBuilder uriBuilder = UriComponentsBuilder
+                .fromUriString("https://api.enablebanking.com/accounts/" + accountId + "/transactions");
+
+        URI targetUri = uriBuilder.build().encode().toUri();
+
+        ResponseEntity<TransactionsPageResponse> response = restTemplate.exchange(
+                targetUri,
+                HttpMethod.GET,
+                entity,
+                TransactionsPageResponse.class
+        );
+
+        List<TransactionDTO> result = response.getBody() != null ? response.getBody().transactions() : new ArrayList<>();
+
+        while (response.getBody().continuationKey() != null && !response.getBody().continuationKey().isBlank()) {
+
+            uriBuilder.queryParam("continuation_key", response.getBody().continuationKey());
+
+            response = restTemplate.exchange(
+                    targetUri,
+                    HttpMethod.GET,
+                    entity,
+                    TransactionsPageResponse.class
+            );
+
+            if (response.getBody() != null) break;
+            result.addAll(response.getBody().transactions());
+        }
+
+        return result;
     }
 
     public List<List<TransactionDTO>> findMonthlySubscriptions(List<TransactionDTO> transactions) {

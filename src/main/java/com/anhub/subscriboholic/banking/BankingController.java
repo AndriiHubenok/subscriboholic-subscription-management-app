@@ -14,6 +14,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -54,7 +55,7 @@ class BankingController {
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String validUntil = java.time.Instant.now()
+        String validUntil = Instant.now()
                 .plus(90, ChronoUnit.DAYS)
                 .toString();
 
@@ -88,7 +89,6 @@ class BankingController {
             @RequestParam("code") String code,
             @RequestParam("state") String state) {
         System.out.println("Handle Banking Callback is called");
-        System.out.println("Code: " + code);
 
         String authHeader = bankingService.getAuthorizationHeader();
 
@@ -110,63 +110,16 @@ class BankingController {
     }
 
     @GetMapping("/bank-transactions/{accountId}")
-    public ResponseEntity<String> fetchTransactions(@PathVariable String accountId,
-                                                    @RequestParam(name = "continuation_key", required = false) String continuationKey) {
-        String authHeader = bankingService.getAuthorizationHeader();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(authHeader);
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        RestTemplate restTemplate = new RestTemplate();
-
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                .fromUriString("https://api.enablebanking.com/accounts/" + accountId + "/transactions");
-
-        if (continuationKey != null && !continuationKey.isBlank()) {
-            uriBuilder.queryParam("continuation_key", continuationKey);
-        }
-
-        URI targetUri = uriBuilder.build().encode().toUri();
-
-        return restTemplate.exchange(
-                targetUri,
-                HttpMethod.GET,
-                entity,
-                String.class
-        );
+    public ResponseEntity<List<TransactionDTO>> fetchTransactions(@PathVariable String accountId) {
+        List<TransactionDTO> result = bankingService.requestTransactions(accountId);
+        return ResponseEntity.ok().body(result);
     }
 
     @GetMapping("/possible-subscriptions/{accountId}")
     public ResponseEntity<List<TransactionDTO>> fetchPossibleTransactions(@PathVariable String accountId) {
-        String authHeader = bankingService.getAuthorizationHeader();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(authHeader);
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        RestTemplate restTemplate = new RestTemplate();
-
-        UriComponentsBuilder uriBuilder = UriComponentsBuilder
-                .fromUriString("https://api.enablebanking.com/accounts/" + accountId + "/transactions");
-
-        URI targetUri = uriBuilder.build().encode().toUri();
-
-        ResponseEntity<TransactionsPageResponse> response = restTemplate.exchange(
-                targetUri,
-                HttpMethod.GET,
-                entity,
-                TransactionsPageResponse.class
-        );
-
-
-        List<TransactionDTO> transactions = response.getBody() != null ? response.getBody().transactions() : new ArrayList<>();
-
+        List<TransactionDTO> transactions = bankingService.requestTransactions(accountId);
         List<TransactionDTO> possibleSubscriptions = bankingService.findMonthlySubscriptions(transactions)
                 .stream().map(List::getLast).toList();
-
         return ResponseEntity.ok(possibleSubscriptions);
     }
 }
