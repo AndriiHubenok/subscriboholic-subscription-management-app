@@ -1,5 +1,8 @@
 package com.anhub.subscriboholic.subscription;
 
+import com.anhub.subscriboholic.notification.dto.SubscriptionPaymentDueEvent;
+import com.anhub.subscriboholic.notification.producer.NotificationEventProducer;
+import com.anhub.subscriboholic.subscription.enumerated.SubscriptionStatus;
 import com.anhub.subscriboholic.subscription.exception.SubscriptionNotFoundException;
 import com.anhub.subscriboholic.user.exception.UnauthorizedSubscriptionAccessException;
 import com.anhub.subscriboholic.subscription.dto.CreateSubscriptionRequest;
@@ -8,9 +11,11 @@ import com.anhub.subscriboholic.user.User;
 import com.anhub.subscriboholic.user.UserRepository;
 import com.anhub.subscriboholic.auth.AuthService;
 import lombok.AllArgsConstructor;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -21,6 +26,7 @@ class SubscriptionService {
     private final UserRepository userRepository;
     private final SubscriptionMapper subscriptionMapper;
     private final AuthService authService;
+    private final NotificationEventProducer notificationEventProducer;
 
     public SubscriptionDTO createSubscription(CreateSubscriptionRequest request) {
         Subscription subscription = subscriptionMapper.toEntity(request);
@@ -77,5 +83,21 @@ class SubscriptionService {
             throw new UnauthorizedSubscriptionAccessException();
         }
         return subscription;
+    }
+
+    @Scheduled(cron = "0 0 22 * * *") // Runs every day at midnight
+    private void scheduleUpcomingSubscriptionAlerts(){
+        LocalDate threeDays = LocalDate.now().plusDays(3);
+        subscriptionRepository.findByStatusAndNextPaymentDateBetween(SubscriptionStatus.ACTIVE, LocalDate.now(), threeDays)
+                        .forEach(subscription -> notificationEventProducer.sendPaymentDueAlert(
+                                SubscriptionPaymentDueEvent.of(
+                                        subscription.getUser().getId(),
+                                        subscription.getId(),
+                                        subscription.getName(),
+                                        subscription.getPrice(),
+                                        subscription.getCurrency(),
+                                        subscription.getNextPaymentDate()
+                                )
+                        ));
     }
 }
