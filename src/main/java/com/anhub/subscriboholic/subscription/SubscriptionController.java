@@ -36,6 +36,12 @@ class SubscriptionController {
         return ResponseEntity.status(201).body(createdSubscriptions);
     }
 
+    @GetMapping()
+    public ResponseEntity<List<SubscriptionDTO>> listSubscriptions() {
+        List<SubscriptionDTO> listSubscriptions = subscriptionService.getListSubscriptions();
+        return ResponseEntity.ok(listSubscriptions);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<SubscriptionDTO> getSubscriptionById(@PathVariable Integer id) {
         SubscriptionDTO subscriptionDTO = subscriptionService.getSubscriptionById(id);

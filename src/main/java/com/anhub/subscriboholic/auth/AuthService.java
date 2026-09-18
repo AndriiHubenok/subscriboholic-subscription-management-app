@@ -48,6 +48,12 @@ public class AuthService {
         return jwtService.generateToken(user);
     }
 
+    public Integer getCurrentUserId() {
+        String username = getCurrentUserUsername();
+        User user = userRepository.findByUsername(username).orElseThrow();
+        return user.getId();
+    }
+
     public String getCurrentUserUsername() {
         String username;
         try {

@@ -55,6 +55,15 @@ class SubscriptionService {
                 .toList();
     }
 
+    public List<SubscriptionDTO> getListSubscriptions() {
+        Integer userId = authService.getCurrentUserId();
+        List<Subscription> subscriptions = subscriptionRepository.findAllByUserId(userId);
+
+        return subscriptions.stream()
+                .map(subscriptionMapper::toDTO)
+                .toList();
+    }
+
     public SubscriptionDTO getSubscriptionById(Integer id) {
         return subscriptionMapper.toDTO(getSubscription(id));
     }
@@ -85,8 +94,9 @@ class SubscriptionService {
         return subscription;
     }
 
-    @Scheduled(cron = "0 0 22 * * *") // Runs every day at midnight
-    private void scheduleUpcomingSubscriptionAlerts(){
+    @Scheduled(cron = "0 44 22 * * *") // Runs every day at midnight
+    public void scheduleUpcomingSubscriptionAlerts(){
+        System.out.println("Running scheduled task to send upcoming subscription alerts...");
         LocalDate threeDays = LocalDate.now().plusDays(3);
         subscriptionRepository.findByStatusAndNextPaymentDateBetween(SubscriptionStatus.ACTIVE, LocalDate.now(), threeDays)
                         .forEach(subscription -> notificationEventProducer.sendPaymentDueAlert(

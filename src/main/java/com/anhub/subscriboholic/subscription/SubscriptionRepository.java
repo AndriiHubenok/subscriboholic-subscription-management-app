@@ -7,6 +7,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 interface SubscriptionRepository extends JpaRepository<Subscription, Integer> {
+
+    List<Subscription> findAllByUserId(Integer userId);
+
     List<Subscription> findByStatusAndNextPaymentDateBetween(
             SubscriptionStatus status,
             LocalDate startDate,
