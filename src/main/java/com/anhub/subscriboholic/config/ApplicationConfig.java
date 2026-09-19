@@ -3,6 +3,7 @@ package com.anhub.subscriboholic.config;
 import com.anhub.subscriboholic.user.UserRepository;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.github.cdimascio.dotenv.Dotenv;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -51,5 +52,10 @@ public class ApplicationConfig {
                 .maximumSize(1000)
                 .expireAfterWrite(30, TimeUnit.MINUTES)
                 .build();
+    }
+
+    @Bean
+    public Dotenv dotenv() {
+        return Dotenv.load();
     }
 }

@@ -1,5 +1,6 @@
 package com.anhub.subscriboholic.subscription;
 
+import com.anhub.subscriboholic.notification.dto.ListSubscriptionPaymentsDueEvent;
 import com.anhub.subscriboholic.notification.dto.SubscriptionPaymentDueEvent;
 import com.anhub.subscriboholic.notification.producer.NotificationEventProducer;
 import com.anhub.subscriboholic.subscription.enumerated.SubscriptionStatus;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -94,20 +96,17 @@ class SubscriptionService {
         return subscription;
     }
 
-    @Scheduled(cron = "0 44 22 * * *") // Runs every day at midnight
+    @Scheduled(cron = "0 21 0 * * *") // Runs every day at midnight
     public void scheduleUpcomingSubscriptionAlerts(){
         System.out.println("Running scheduled task to send upcoming subscription alerts...");
         LocalDate threeDays = LocalDate.now().plusDays(3);
+
         subscriptionRepository.findByStatusAndNextPaymentDateBetween(SubscriptionStatus.ACTIVE, LocalDate.now(), threeDays)
-                        .forEach(subscription -> notificationEventProducer.sendPaymentDueAlert(
-                                SubscriptionPaymentDueEvent.of(
-                                        subscription.getUser().getId(),
-                                        subscription.getId(),
-                                        subscription.getName(),
-                                        subscription.getPrice(),
-                                        subscription.getCurrency(),
-                                        subscription.getNextPaymentDate()
-                                )
-                        ));
+                .stream()
+                .collect(Collectors.groupingBy(subscription -> subscription.getUser().getEmail()))
+                .forEach((email, userSubscriptions) -> {
+                    notificationEventProducer.sendPaymentDueAlert(ListSubscriptionPaymentsDueEvent.of(
+                            email, userSubscriptions.stream().map(subscriptionMapper::toSubscriptionPaymentDueEvent).toList()));
+                });
     }
 }

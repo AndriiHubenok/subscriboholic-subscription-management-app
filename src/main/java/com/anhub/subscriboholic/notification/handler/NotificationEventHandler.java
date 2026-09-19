@@ -1,7 +1,8 @@
 package com.anhub.subscriboholic.notification.handler;
 
-import com.anhub.subscriboholic.notification.config.NotificationRabbitConfig;
-import com.anhub.subscriboholic.notification.dto.SubscriptionPaymentDueEvent;
+import com.anhub.subscriboholic.notification.service.EmailNotificationService;
+import com.anhub.subscriboholic.notification.config.NotificationConfig;
+import com.anhub.subscriboholic.notification.dto.ListSubscriptionPaymentsDueEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -12,24 +13,20 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class NotificationEventHandler {
 
-//    private final EmailNotificationService emailNotificationService;
+    private final EmailNotificationService emailNotificationService;
 
-    @RabbitListener(queues = NotificationRabbitConfig.NOTIFICATION_QUEUE)
-    public void handlePaymentDueEvent(SubscriptionPaymentDueEvent event) {
-        log.info("Received notification event: eventId={}, subName={}",
-                event.eventId(), event.subscriptionName());
+    @RabbitListener(queues = NotificationConfig.NOTIFICATION_QUEUE)
+    public void handlePaymentDueEvent(ListSubscriptionPaymentsDueEvent event) {
+        log.info("Received notification event: eventId={}, userEmail={}",
+                event.eventId(), event.userEmail());
 
         try {
-            System.out.println(event.subscriptionName());
-            System.out.println(event.subscriptionId());
-            System.out.println(event.eventId());
-            System.out.println(event.paymentDueDate());
-            System.out.println(event.amount());
-//            emailNotificationService.sendUpcomingPaymentEmail(event);
+            emailNotificationService.sendUpcomingPaymentEmail(event);
+
         } catch (Exception e) {
 
-            log.error("Failed to process notification for subId={}, eventId={}. Error: {}",
-                    event.subscriptionId(), event.eventId(), e.getMessage());
+            log.error("Failed to process notification for userEmail={}, eventId={}. Error: {}",
+                    event.userEmail(), event.eventId(), e.getMessage());
             throw e;
         }
     }

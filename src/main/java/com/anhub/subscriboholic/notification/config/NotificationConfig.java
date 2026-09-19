@@ -1,15 +1,19 @@
 package com.anhub.subscriboholic.notification.config;
 
+import com.mailgun.api.v3.MailgunMessagesApi;
+import com.mailgun.client.MailgunClient;
+import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class NotificationRabbitConfig {
+public class NotificationConfig {
 
     public static final String NOTIFICATION_EXCHANGE = "notification.exchange";
     public static final String NOTIFICATION_QUEUE = "notification.payment-due.queue";
@@ -67,5 +71,12 @@ public class NotificationRabbitConfig {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(converter);
         return template;
+    }
+
+    @Bean
+    public MailgunMessagesApi mailgunMessagesApi() {
+        Dotenv dotenv = Dotenv.load();
+        return MailgunClient.config(dotenv.get("MAILGUN_API_KEY"))
+                .createApi(MailgunMessagesApi.class);
     }
 }

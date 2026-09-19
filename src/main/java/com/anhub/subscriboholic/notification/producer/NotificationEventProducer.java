@@ -1,7 +1,7 @@
 package com.anhub.subscriboholic.notification.producer;
 
-import com.anhub.subscriboholic.notification.config.NotificationRabbitConfig;
-import com.anhub.subscriboholic.notification.dto.SubscriptionPaymentDueEvent;
+import com.anhub.subscriboholic.notification.config.NotificationConfig;
+import com.anhub.subscriboholic.notification.dto.ListSubscriptionPaymentsDueEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -14,13 +14,13 @@ public class NotificationEventProducer {
 
     private final RabbitTemplate rabbitTemplate;
 
-    public void sendPaymentDueAlert(SubscriptionPaymentDueEvent event) {
-        log.info("Sending payment due event to queue: eventId={}, subscriptionId={}",
-                event.eventId(), event.subscriptionId());
+    public void sendPaymentDueAlert(ListSubscriptionPaymentsDueEvent event) {
+        log.info("Sending payment due event to queue: eventId={}, userEmail={}",
+                event.eventId(), event.userEmail());
 
         rabbitTemplate.convertAndSend(
-                NotificationRabbitConfig.NOTIFICATION_EXCHANGE,
-                NotificationRabbitConfig.NOTIFICATION_ROUTING_KEY,
+                NotificationConfig.NOTIFICATION_EXCHANGE,
+                NotificationConfig.NOTIFICATION_ROUTING_KEY,
                 event
         );
     }
