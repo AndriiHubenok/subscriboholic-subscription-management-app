@@ -12,3 +12,6 @@ security:
 
 mailgun:
   from-name: "Subscriboholic"
+
+app:
+  frontend-url: "http://localhost:60606"

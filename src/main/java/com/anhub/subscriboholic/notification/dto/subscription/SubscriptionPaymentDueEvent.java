@@ -1,8 +1,7 @@
-package com.anhub.subscriboholic.notification.dto;
+package com.anhub.subscriboholic.notification.dto.subscription;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 
 public record SubscriptionPaymentDueEvent(
         Integer subscriptionId,

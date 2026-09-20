@@ -1,7 +1,6 @@
 package com.anhub.subscriboholic.subscription;
 
-import com.anhub.subscriboholic.notification.dto.ListSubscriptionPaymentsDueEvent;
-import com.anhub.subscriboholic.notification.dto.SubscriptionPaymentDueEvent;
+import com.anhub.subscriboholic.notification.dto.subscription.ListSubscriptionPaymentsDueEvent;
 import com.anhub.subscriboholic.notification.producer.NotificationEventProducer;
 import com.anhub.subscriboholic.subscription.enumerated.SubscriptionStatus;
 import com.anhub.subscriboholic.subscription.exception.SubscriptionNotFoundException;

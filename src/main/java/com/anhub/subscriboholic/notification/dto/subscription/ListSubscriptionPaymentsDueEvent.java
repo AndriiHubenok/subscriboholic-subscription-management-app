@@ -1,9 +1,5 @@
-package com.anhub.subscriboholic.notification.dto;
+package com.anhub.subscriboholic.notification.dto.subscription;
 
-import com.anhub.subscriboholic.subscription.Subscription;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 

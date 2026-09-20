@@ -1,8 +1,9 @@
 package com.anhub.subscriboholic.notification.service;
 
 
-import com.anhub.subscriboholic.notification.dto.ListSubscriptionPaymentsDueEvent;
-import com.anhub.subscriboholic.notification.dto.SubscriptionPaymentDueEvent;
+import com.anhub.subscriboholic.notification.dto.subscription.ListSubscriptionPaymentsDueEvent;
+import com.anhub.subscriboholic.notification.dto.subscription.SubscriptionPaymentDueEvent;
+import com.anhub.subscriboholic.notification.dto.user.UserRegisteredEvent;
 import com.mailgun.api.v3.MailgunMessagesApi;
 import com.mailgun.model.message.Message;
 import com.mailgun.model.message.MessageResponse;
@@ -27,6 +28,9 @@ public class EmailNotificationService {
 
     @Value("${mailgun.from-name:Subscriboholic}")
     private String fromName;
+
+    @Value("${app.frontend-url:http://localhost:60606}")
+    private String frontendUrl;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy");
 
@@ -154,5 +158,120 @@ public class EmailNotificationService {
         }
         sb.append(String.format("\nTotal expected: %.2f %s\n\nManage your subscriptions in Subscriboholic.", total, currency));
         return sb.toString();
+    }
+
+    public void sendVerificationEmail(UserRegisteredEvent event) {
+        log.info("Building verification email for {} (eventId: {})", event.getUserEmail(), event.getEventId());
+
+        String verificationLink = String.format("%s/auth/verify?token=%s", frontendUrl, event.getVerificationToken());
+
+        String htmlBody = buildVerificationHtml(verificationLink);
+        String textBody = buildVerificationTextFallback(verificationLink);
+
+        Message message = Message.builder()
+                .from(String.format("%s <%s>", fromName, String.format("no-reply@%s", dotenv.get("MAILGUN_DOMAIN"))))
+                .to(event.getUserEmail())
+                .subject("Verify your Subscriboholic account")
+                .text(textBody)
+                .html(htmlBody)
+                .build();
+
+        try {
+            MessageResponse response = mailgunMessagesApi.sendMessage(dotenv.get("MAILGUN_DOMAIN"), message);
+            log.info("Verification email sent to {}. Mailgun id: {}", event.getUserEmail(), response.getId());
+        } catch (Exception e) {
+            log.error("Failed to send verification email to {}. Error: {}", event.getUserEmail(), e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    private String buildVerificationHtml(String link) {
+        return String.format("""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #f4f5f7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+              <table width="100%%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f4f5f7; padding: 40px 10px;">
+                <tr>
+                  <td align="center">
+                    <table width="100%%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                      
+                      <!-- Header -->
+                      <tr>
+                        <td style="padding: 32px 36px 24px; background-color: #0f172a;">
+                          <h1 style="margin: 0; font-size: 22px; font-weight: 700; color: #ffffff; letter-spacing: -0.5px;">
+                            💳 Subscriboholic
+                          </h1>
+                          <p style="margin: 6px 0 0; font-size: 13px; color: #94a3b8;">
+                            Confirm your email address
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Body Content -->
+                      <tr>
+                        <td style="padding: 36px 36px 20px;">
+                          <h2 style="margin: 0 0 12px; font-size: 18px; font-weight: 600; color: #0f172a;">
+                            Welcome aboard!
+                          </h2>
+                          <p style="margin: 0; font-size: 15px; line-height: 24px; color: #334155;">
+                            Thanks for signing up for Subscriboholic. Please verify your email address to secure your account and start tracking your subscriptions.
+                          </p>
+
+                          <!-- Call To Action Button -->
+                          <table border="0" cellspacing="0" cellpadding="0" style="margin: 32px 0;">
+                            <tr>
+                              <td align="center" style="border-radius: 8px; background-color: #2563eb;">
+                                <a href="%s" target="_blank" style="font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; padding: 14px 32px; display: inline-block; border-radius: 8px;">
+                                  Verify Email Address
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+
+                          <p style="margin: 0 0 8px; font-size: 13px; color: #64748b; line-height: 20px;">
+                            ⏱️ This verification link will expire in <strong>24 hours</strong>.
+                          </p>
+                          <p style="margin: 0; font-size: 13px; color: #64748b; line-height: 20px;">
+                            If the button doesn't work, copy and paste this link into your browser:
+                          </p>
+                          <p style="margin: 6px 0 0; font-size: 12px; word-break: break-all;">
+                            <a href="%s" style="color: #2563eb; text-decoration: underline;">%s</a>
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Footer -->
+                      <tr>
+                        <td style="padding: 24px 36px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center;">
+                          <p style="margin: 0; font-size: 12px; color: #94a3b8; line-height: 18px;">
+                            If you didn't create an account with Subscriboholic, you can safely ignore this email.
+                          </p>
+                        </td>
+                      </tr>
+
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+            """, link, link, link);
+    }
+
+    private String buildVerificationTextFallback(String link) {
+        return String.format("""
+            Welcome to Subscriboholic!
+
+            Please confirm your email address by opening the following link in your browser:
+            %s
+
+            This link will expire in 24 hours.
+
+            If you did not register, please ignore this email.
+            """, link);
     }
 }
