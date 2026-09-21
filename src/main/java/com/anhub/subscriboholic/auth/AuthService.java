@@ -50,6 +50,7 @@ public class AuthService {
         VerificationToken verificationToken = new VerificationToken();
         verificationToken.setToken(generateVerificationToken());
         verificationToken.setUser(createdUser);
+        tokenRepository.save(verificationToken);
 
         UserRegisteredEvent event = userMapper.toUserEmailVerificationEvent(createdUser);
         event.setEventId(UUID.randomUUID());

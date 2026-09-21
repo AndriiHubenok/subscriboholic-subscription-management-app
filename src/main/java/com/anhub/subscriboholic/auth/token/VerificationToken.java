@@ -14,7 +14,6 @@ import java.time.Instant;
 })
 @Getter
 @Setter
-@NoArgsConstructor
 public class VerificationToken {
 
     @Id
@@ -34,11 +33,9 @@ public class VerificationToken {
     @Column(nullable = false)
     private Instant createdAt;
 
-    public VerificationToken(String token, User user, long validityHours) {
-        this.token = token;
-        this.user = user;
+    public VerificationToken() {
         this.createdAt = Instant.now();
-        this.expiresAt = this.createdAt.plusSeconds(validityHours * 3600);
+        this.expiresAt = this.createdAt.plusSeconds(86400);
     }
 
     public boolean isExpired() {
