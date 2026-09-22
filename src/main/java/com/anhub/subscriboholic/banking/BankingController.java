@@ -1,20 +1,32 @@
 package com.anhub.subscriboholic.banking;
 
+import com.anhub.subscriboholic.banking.dto.AspspDTO;
+import com.anhub.subscriboholic.banking.dto.TransactionDTO;
+import com.anhub.subscriboholic.banking.dto.TransactionsPageResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.AllArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.List;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.net.URI;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @RestController
 @AllArgsConstructor
+@RequestMapping("/api/banking")
 class BankingController {
 
     private final BankingService bankingService;
+    private final Cache<String, String> cache;
 
-    @GetMapping("/api/bank-data")
+    @GetMapping("/bank-data")
     public ResponseEntity<String> fetchBankData() {
         String authHeader = bankingService.getAuthorizationHeader();
 
@@ -27,15 +39,15 @@ class BankingController {
         RestTemplate restTemplate = new RestTemplate();
 
         return restTemplate.exchange(
-                "https://api.enablebanking.com/aspsps",
+                "https://api.enablebanking.com/aspsps?country=LT",
                 HttpMethod.GET,
                 entity,
                 String.class
         );
     }
 
-    @PostMapping("/api/bank-auth")
-    public ResponseEntity<String> authBanking() {
+    @PostMapping("/bank-auth")
+    public ResponseEntity<String> authBanking(@RequestBody AspspDTO aspspDTO) {
         String authHeader = bankingService.getAuthorizationHeader();
 
         HttpHeaders headers = new HttpHeaders();
@@ -43,16 +55,16 @@ class BankingController {
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        String validUntil = java.time.Instant.now()
-                .plus(90, java.time.temporal.ChronoUnit.DAYS)
+        String validUntil = Instant.now()
+                .plus(90, ChronoUnit.DAYS)
                 .toString();
 
-        Map<String, Object> requestBody = new java.util.HashMap<>();
+        Map<String, Object> requestBody = new HashMap<>();
 
-        requestBody.put("access", java.util.Map.of("valid_until", validUntil));
-        requestBody.put("aspsp", java.util.Map.of("name", "Nordea", "country", "FI"));
-        requestBody.put("state", java.util.UUID.randomUUID().toString());
-        requestBody.put("redirect_url", "http://localhost:60606/enable_banking_callback");
+        requestBody.put("access", Map.of("valid_until", validUntil));
+        requestBody.put("aspsp", aspspDTO);
+        requestBody.put("state", UUID.randomUUID().toString());
+        requestBody.put("redirect_url", "http://localhost:60606/api/banking/enable_banking_callback");
 
         // Optional params
 //        requestBody.put("psu_type", "personal");
@@ -97,24 +109,17 @@ class BankingController {
         );
     }
 
-    @GetMapping("/api/bank-transactions/{accountId}")
-    public ResponseEntity<String> fetchTransactions(@PathVariable String accountId) {
-        String authHeader = bankingService.getAuthorizationHeader();
+    @GetMapping("/bank-transactions/{accountId}")
+    public ResponseEntity<List<TransactionDTO>> fetchTransactions(@PathVariable String accountId) {
+        List<TransactionDTO> result = bankingService.requestTransactions(accountId);
+        return ResponseEntity.ok().body(result);
+    }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(authHeader);
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        RestTemplate restTemplate = new RestTemplate();
-
-        String url = "https://api.enablebanking.com/accounts/" + accountId + "/transactions";
-
-        return restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                String.class
-        );
+    @GetMapping("/possible-subscriptions/{accountId}")
+    public ResponseEntity<List<TransactionDTO>> fetchPossibleTransactions(@PathVariable String accountId) {
+        List<TransactionDTO> transactions = bankingService.requestTransactions(accountId);
+        List<TransactionDTO> possibleSubscriptions = bankingService.findMonthlySubscriptions(transactions)
+                .stream().map(List::getLast).toList();
+        return ResponseEntity.ok(possibleSubscriptions);
     }
 }

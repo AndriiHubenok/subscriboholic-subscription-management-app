@@ -54,6 +54,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private UserRole role;
 
+    @Column(name = "email_verified", nullable = false)
+    private boolean emailVerified;
+
     @Column(name = "updated_at")
     @LastModifiedDate
     private LocalDateTime updatedAt;
@@ -79,21 +82,21 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true;
+        return emailVerified;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return emailVerified;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;
+        return emailVerified;
     }
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return emailVerified;
     }
 }

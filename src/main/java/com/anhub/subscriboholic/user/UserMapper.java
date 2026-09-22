@@ -1,5 +1,6 @@
 package com.anhub.subscriboholic.user;
 
+import com.anhub.subscriboholic.notification.dto.user.UserRegisteredEvent;
 import com.anhub.subscriboholic.user.dto.CreateUserRequest;
 import com.anhub.subscriboholic.user.dto.UserDTO;
 import org.mapstruct.Mapper;
@@ -14,7 +15,15 @@ public interface UserMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "subscriptions", ignore = true)
     @Mapping(target = "role", ignore = true)
+    @Mapping(target = "emailVerified", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     User toEntity(CreateUserRequest request);
+
+    @Mapping(target = "eventId", ignore = true)
+    @Mapping(target = "verificationToken", ignore = true)
+    @Mapping(source = "id", target = "userId")
+    @Mapping(source = "email", target = "userEmail")
+    @Mapping(source = "username", target = "username")
+    UserRegisteredEvent toUserEmailVerificationEvent(User user);
 }

@@ -26,8 +26,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/banking/enable_banking_callback").permitAll()
+
                         .requestMatchers( "/users/**").hasRole("ADMIN")
-                        .requestMatchers("/enable_banking_callback").permitAll()
+                        .requestMatchers("/api/banking/bank-data/**").hasRole("ADMIN")
+
+                        .requestMatchers("/api/banking/**").hasRole("USER")
+
                         .anyRequest().authenticated()
                 )
 

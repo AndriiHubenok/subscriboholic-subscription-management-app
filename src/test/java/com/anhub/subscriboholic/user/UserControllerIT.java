@@ -1,9 +1,7 @@
-package com.anhub.subscriboholic.subscription;
+package com.anhub.subscriboholic.user;
 
 import com.anhub.subscriboholic.user.dto.CreateUserRequest;
-import com.anhub.subscriboholic.user.User;
 import com.anhub.subscriboholic.user.enumerated.UserRole;
-import com.anhub.subscriboholic.user.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -44,8 +42,6 @@ class UserControllerIT {
             .registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-    @Autowired
-    private SubscriptionRepository subscriptionRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -74,7 +70,6 @@ class UserControllerIT {
 
     @BeforeEach
     void setUp() {
-        subscriptionRepository.deleteAll();
         userRepository.deleteAll();
 
         User user = new User();

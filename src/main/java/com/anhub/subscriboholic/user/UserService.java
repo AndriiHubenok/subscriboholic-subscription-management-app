@@ -21,6 +21,7 @@ class UserService {
 
         user.setPassword(encoder.encode(request.getPassword()));
         user.setRole(UserRole.USER);
+        user.setEmailVerified(true);
 
         return userMapper.toDTO(userRepository.save(user));
     }
