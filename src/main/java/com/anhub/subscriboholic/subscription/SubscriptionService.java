@@ -95,7 +95,7 @@ class SubscriptionService {
         return subscription;
     }
 
-    @Scheduled(cron = "0 21 0 * * *") // Runs every day at midnight
+    @Scheduled(cron = "0 0 1 * * *")
     public void scheduleUpcomingSubscriptionAlerts(){
         System.out.println("Running scheduled task to send upcoming subscription alerts...");
         LocalDate threeDays = LocalDate.now().plusDays(3);

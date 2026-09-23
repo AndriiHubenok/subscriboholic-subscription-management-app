@@ -15,7 +15,9 @@ import com.anhub.subscriboholic.user.enumerated.UserRole;
 import com.anhub.subscriboholic.user.UserRepository;
 import com.anhub.subscriboholic.security.JwtService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,10 +26,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
 @Transactional
+@Slf4j
 @AllArgsConstructor
 public class AuthService {
 
@@ -81,6 +86,12 @@ public class AuthService {
         tokenRepository.delete(token);
 
         return true;
+    }
+
+    @Scheduled(cron = "0 3 22 * * ?")
+    public void deleteExpiredUnverifiedUsers() {
+        int amountDeletedUsers = userRepository.deleteUnverifiedUsersOlderThan(LocalDateTime.now());
+        log.info("Deleted {} unverified users", amountDeletedUsers);
     }
 
     public String login(LoginRequest request) {
