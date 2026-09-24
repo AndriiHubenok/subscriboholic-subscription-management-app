@@ -8,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @Transactional
 @AllArgsConstructor
@@ -29,6 +31,12 @@ class UserService {
     public UserDTO getUserById(Integer id) {
         return userMapper.toDTO(userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found")));
+    }
+
+    public List<UserDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(userMapper::toDTO)
+                .toList();
     }
 
     public boolean deleteUserById(Integer id) {

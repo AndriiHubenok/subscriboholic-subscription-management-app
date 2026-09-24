@@ -29,7 +29,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/banking/enable_banking_callback").permitAll()
 
                         .requestMatchers( "/users/**").hasRole("ADMIN")
-                        .requestMatchers("/api/banking/bank-data/**").hasRole("ADMIN")
+                        .requestMatchers("/api/banking/bank-data/**").permitAll()
 
                         .requestMatchers("/api/banking/**").hasRole("USER")
 

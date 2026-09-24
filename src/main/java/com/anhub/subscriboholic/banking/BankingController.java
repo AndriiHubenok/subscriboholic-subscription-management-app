@@ -1,19 +1,14 @@
 package com.anhub.subscriboholic.banking;
 
+import com.anhub.subscriboholic.banking.dto.AspspAuthBody;
 import com.anhub.subscriboholic.banking.dto.AspspDTO;
 import com.anhub.subscriboholic.banking.dto.TransactionDTO;
-import com.anhub.subscriboholic.banking.dto.TransactionsPageResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.AllArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.math.BigDecimal;
-import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -27,27 +22,13 @@ class BankingController {
     private final Cache<String, String> cache;
 
     @GetMapping("/bank-data")
-    public ResponseEntity<String> fetchBankData() {
-        String authHeader = bankingService.getAuthorizationHeader();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(authHeader);
-        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-
-        RestTemplate restTemplate = new RestTemplate();
-
-        return restTemplate.exchange(
-                "https://api.enablebanking.com/aspsps?country=LT",
-                HttpMethod.GET,
-                entity,
-                String.class
-        );
+    public ResponseEntity<List<AspspDTO>> fetchBankData(@RequestParam(required = false) String country) {
+        List<AspspDTO> aspsps = bankingService.getListAspsps(country);
+        return ResponseEntity.ok(aspsps);
     }
 
     @PostMapping("/bank-auth")
-    public ResponseEntity<String> authBanking(@RequestBody AspspDTO aspspDTO) {
+    public ResponseEntity<String> authBanking(@RequestBody AspspAuthBody aspspAuthBody) {
         String authHeader = bankingService.getAuthorizationHeader();
 
         HttpHeaders headers = new HttpHeaders();
@@ -62,7 +43,7 @@ class BankingController {
         Map<String, Object> requestBody = new HashMap<>();
 
         requestBody.put("access", Map.of("valid_until", validUntil));
-        requestBody.put("aspsp", aspspDTO);
+        requestBody.put("aspsp", aspspAuthBody);
         requestBody.put("state", UUID.randomUUID().toString());
         requestBody.put("redirect_url", "http://localhost:60606/api/banking/enable_banking_callback");
 

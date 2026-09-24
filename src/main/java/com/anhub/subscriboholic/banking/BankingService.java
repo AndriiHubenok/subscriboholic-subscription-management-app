@@ -1,5 +1,7 @@
 package com.anhub.subscriboholic.banking;
 
+import com.anhub.subscriboholic.banking.dto.AspspDTO;
+import com.anhub.subscriboholic.banking.dto.AspspsPageResponse;
 import com.anhub.subscriboholic.banking.dto.TransactionDTO;
 import com.anhub.subscriboholic.banking.dto.TransactionsPageResponse;
 import io.github.cdimascio.dotenv.Dotenv;
@@ -85,6 +87,32 @@ class BankingService {
 
         return KeyFactory.getInstance("RSA")
                 .generatePrivate(keySpec);
+    }
+
+    public List<AspspDTO> getListAspsps(String country) {
+
+        String authHeader = getAuthorizationHeader();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(authHeader);
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "https://api.enablebanking.com/aspsps";
+        if (country != null) {
+            url += "?country=" + country;
+        }
+
+        ResponseEntity<AspspsPageResponse> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                AspspsPageResponse.class
+        );
+
+        return response.getBody() != null ? response.getBody().aspsps() : null;
     }
 
     public List<TransactionDTO> requestTransactions(String accountId) {
